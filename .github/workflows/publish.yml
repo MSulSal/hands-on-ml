@@ -26,11 +26,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Convert notebooks to HTML
+      - name: Convert Notebooks to HTML
         run: |
           mkdir -p docs
           for nb in notebooks/*.ipynb; do
-            jupyter nbconvert --to html "$nb" --output docs/"$(basename "${nb%.ipynb}.html")"
+            jupyter nbconvert --to html "$nb" --output-dir docs/"$(basename "${nb%.ipynb}.html")"
           done
 
       - name: Deploy to GitHub Pages
