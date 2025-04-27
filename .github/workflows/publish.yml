@@ -1,21 +1,27 @@
-name: Publish Notebooks to GitHub Pages
+name: Publish Notebooks & TOC to GitHub Pages
 
-permissions:
-  contents: write
-  pages: write
-
+# 1. Only run on main branch, but ignore pushes to docs/ to prevent loops
 on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "docs/**" # don’t re-run when generated files change :contentReference[oaicite:2]{index=2}
+
+permissions:
+  contents: write # allow deployment
+  pages: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
+      # 2. Checkout your source
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # 3. Install Python & dependencies
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -26,6 +32,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # 4. Convert all notebooks into docs/
       - name: Convert Notebooks to HTML
         run: |
           mkdir -p docs
@@ -34,10 +41,28 @@ jobs:
               --to html \
               --output-dir docs \
               --output "$(basename "${nb%.ipynb}")"
-          done
+          done                         # nbconvert --output-dir writes HTML into docs/ :contentReference[oaicite:3]{index=3}
 
+      # 5. Generate a JSON manifest of all HTML files
+      - name: Generate Table of Contents JSON
+        run: |
+          echo "[" > docs/files.json
+          first=true
+          for f in docs/*.html; do
+            if [ "$first" = true ]; then first=false; else echo ","; fi
+            name="$(basename "$f")"
+            printf '  { "name": "%s", "path": "docs/%s" }' "$name" "$name" >> docs/files.json
+          done
+          echo "]" >> docs/files.json
+
+      # 6. Copy static site assets into docs/
+      - name: Copy Static Assets
+        run: |
+          cp index.html script.js styles.css docs/
+
+      # 7. Deploy docs/ to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{secrets.GITHUB_TOKEN}}
-          publish_dir: ./
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs # deploy docs/ as your Pages source :contentReference[oaicite:4]{index=4}

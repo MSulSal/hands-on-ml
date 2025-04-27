@@ -1,0 +1,31 @@
+/* Reset and base styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 2rem;
+  color: #333;
+}
+
+/* Heading */
+h1 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Table of contents list */
+ul#toc {
+  list-style: none; /* remove default bullets :contentReference[oaicite:5]{index=5} */
+  padding: 0;
+}
+
+ul#toc li {
+  margin: 0.5rem 0;
+}
+
+ul#toc a {
+  text-decoration: none;
+  color: #0066cc;
+}
+
+ul#toc a:hover {
+  text-decoration: underline;
+}
