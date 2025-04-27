@@ -30,7 +30,10 @@ jobs:
         run: |
           mkdir -p docs
           for nb in notebooks/*.ipynb; do
-            jupyter nbconvert --to html "$nb" --output-dir docs/"$(basename "${nb%.ipynb}.html")"
+            jupyter nbconvert "$nb" \
+              --to html \
+              --output-dir docs \
+              --output "$(basename "${nb%.ipynb}")"
           done
 
       - name: Deploy to GitHub Pages
