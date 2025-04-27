@@ -1,68 +1,68 @@
 name: Publish Notebooks & TOC to GitHub Pages
 
-# 1. Only run on main branch, but ignore pushes to docs/ to prevent loops
+# Trigger only on pushes to main
 on:
   push:
     branches:
       - main
-    paths-ignore:
-      - "docs/**" # don’t re-run when generated files change :contentReference[oaicite:2]{index=2}
 
 permissions:
-  contents: write # allow deployment
-  pages: write
+  contents: write # For checkout + deploy
+  pages: write # For Pages deployment
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 2. Checkout your source
+      # 1. Checkout source code from main
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 3. Install Python & dependencies
+      # 2. Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
+      # 3. Install your dependencies
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 4. Convert all notebooks into docs/
+      # 4. Convert each notebook to HTML in docs/
       - name: Convert Notebooks to HTML
         run: |
-          mkdir -p docs
+          rm -rf docs && mkdir docs
           for nb in notebooks/*.ipynb; do
             jupyter nbconvert "$nb" \
               --to html \
               --output-dir docs \
               --output "$(basename "${nb%.ipynb}")"
-          done                         # nbconvert --output-dir writes HTML into docs/ :contentReference[oaicite:3]{index=3}
+          done
 
-      # 5. Generate a JSON manifest of all HTML files
+      # 5. Generate a JSON manifest (files.json) in docs/
       - name: Generate Table of Contents JSON
         run: |
           echo "[" > docs/files.json
           first=true
           for f in docs/*.html; do
             if [ "$first" = true ]; then first=false; else echo ","; fi
-            name="$(basename "$f")"
-            printf '  { "name": "%s", "path": "docs/%s" }' "$name" "$name" >> docs/files.json
+            name=$(basename "$f")
+            printf '  { "name": "%s", "path": "%s" }' "$name" "$name" >> docs/files.json
           done
           echo "]" >> docs/files.json
 
-      # 6. Copy static site assets into docs/
+      # 6. Copy your static index, script, and styles into docs/
       - name: Copy Static Assets
         run: |
           cp index.html script.js styles.css docs/
 
-      # 7. Deploy docs/ to GitHub Pages
+      # 7. Deploy docs/ to the root of gh-pages branch
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs # deploy docs/ as your Pages source :contentReference[oaicite:4]{index=4}
+          publish_branch: gh-pages # target branch :contentReference[oaicite:3]{index=3}
+          publish_dir: docs # deploy this folder’s contents :contentReference[oaicite:4]{index=4}
